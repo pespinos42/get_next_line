@@ -1,0 +1,112 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pespinos <pespinos@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/11/04 17:06:51 by pespinos          #+#    #+#             */
+/*   Updated: 2022/11/09 10:47:00 by pespinos         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "get_next_line_bonus.h"
+#ifndef BUFFER_SIZE
+# define BUFFER_SIZE 10
+#endif
+
+char	*ft_join_free(char *buffer, char *str)
+{
+	char	*temp;
+
+	temp = ft_strjoin(buffer, str);
+	free (buffer);
+	return (temp);
+}
+
+char	*ft_total_line(char *buffer, int fd)
+{
+	int		bytes;
+	char	*str;
+
+	bytes = 1;
+	str = malloc ((BUFFER_SIZE + 1) * sizeof (*str));
+	if (!str)
+	{
+		free (str);
+		return (NULL);
+	}
+	while (bytes > 0 && !ft_strchr(buffer, '\n'))
+	{
+		bytes = read(fd, str, BUFFER_SIZE);
+		if (bytes < 0)
+		{
+			free (str);
+			free (buffer);
+			return (NULL);
+		}
+		str[bytes] = '\0';
+		buffer = ft_join_free(buffer, str);
+	}
+	free (str);
+	return (buffer);
+}
+
+char	*ft_to_nl(char *buffer)
+{
+	int	nl;
+
+	nl = 0;
+	if (!*buffer)
+		return (NULL);
+	while (buffer[nl] && buffer[nl] != '\n')
+		nl++;
+	nl++;
+	return (ft_substr(buffer, 0, nl));
+}
+
+char	*ft_from_nl(char *buffer)
+{
+	int		nl;
+	int		len;
+	char	*str;
+
+	nl = 0;
+	len = 0;
+	while (buffer[nl] && buffer[nl] != '\n')
+		nl++;
+	if (!buffer[nl])
+	{
+		free (buffer);
+		return (NULL);
+	}
+	nl++;
+	len = ft_strlen(&buffer[nl]);
+	str = ft_substr(buffer, nl, len);
+	free (buffer);
+	return (str);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	*buffer[4096];
+	char		*str;
+
+	if (read(fd, 0, 0))
+	{
+		free (buffer[fd]);
+		buffer[fd] = NULL;
+		return (NULL);
+	}
+	if (!buffer[fd])
+		buffer[fd] = ft_strdup("");
+	buffer[fd] = ft_total_line(buffer[fd], fd);
+	if (!buffer[fd] || fd < 0 || BUFFER_SIZE <= 0)
+	{
+		free (buffer[fd]);
+		return (NULL);
+	}
+	str = ft_to_nl(buffer[fd]);
+	buffer[fd] = ft_from_nl(buffer[fd]);
+	return (str);
+}
